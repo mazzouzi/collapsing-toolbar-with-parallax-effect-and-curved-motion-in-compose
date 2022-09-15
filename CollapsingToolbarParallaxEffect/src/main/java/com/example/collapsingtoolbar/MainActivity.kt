@@ -1,7 +1,6 @@
 package com.example.collapsingtoolbar
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -13,7 +12,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,12 +25,14 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +48,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
 import com.example.collapsingtoolbar.ui.theme.CollapsingToolbarTheme
+import kotlin.math.pow
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +74,10 @@ private val toolbarHeight = 56.dp
 private val paddingMedium = 16.dp
 
 private val titlePaddingStart = 16.dp
-private val titlePaddingEnd = 72.dp
+private val titlePaddingEnd = 64.dp
+
+private const val titleFontScaleStart = 1f
+private const val titleFontScaleEnd = 0.66f
 
 @Composable
 fun CollapsingToolbarParallaxEffect() {
@@ -92,19 +98,12 @@ fun CollapsingToolbarParallaxEffect() {
 
 @Composable
 private fun Header(scroll: ScrollState, headerHeightPx: Float) {
-    val headerTranslationY = -scroll.value.toFloat() / 2f // Parallax effect
-    val headerAlpha = (-1f / headerHeightPx) * scroll.value + 1
-    Log.d(
-        "Morad",
-        "translationY = $headerTranslationY | alpha = $headerAlpha | scroll = ${scroll.value}"
-    )
-
     Box(modifier = Modifier
         .fillMaxWidth()
         .height(headerHeight)
         .graphicsLayer {
-            translationY = headerTranslationY
-            alpha = headerAlpha
+            translationY = -scroll.value.toFloat() / 2f // Parallax effect
+            alpha = (-1f / headerHeightPx) * scroll.value + 1
         }
     ) {
         Image(
@@ -148,74 +147,84 @@ private fun Body(scroll: ScrollState) {
 
 @Composable
 private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx: Float) {
-    var showToolbar by remember { mutableStateOf(false) }
-    val toolbarBottomTranslation = headerHeightPx - toolbarHeightPx
-    showToolbar = scroll.value >= toolbarBottomTranslation
+    val toolbarBottom = headerHeightPx - toolbarHeightPx
+    val showToolbar by derivedStateOf {
+        scroll.value >= toolbarBottom
+    }
 
     AnimatedVisibility(
         visible = showToolbar,
-        enter = fadeIn(animationSpec = tween(400)),
-        exit = fadeOut(animationSpec = tween(400))
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300))
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .height(56.dp)
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color(0xff026586), Color(0xff032C45))
+        TopAppBar(
+            modifier = Modifier.background(
+                brush = Brush.horizontalGradient(
+                    listOf(Color(0xff026586), Color(0xff032C45))
+                )
+            ),
+            navigationIcon = {
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "",
+                        tint = Color.White
                     )
-                )
-        ) {
-            IconButton(
-                onClick = {}, modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "",
-                    tint = Color.White
-                )
-            }
-        }
+                }
+            },
+            title = {},
+            backgroundColor = Color.Transparent,
+            elevation = 0.dp
+        )
     }
 }
 
 @Composable
-private fun Title(
-    scroll: ScrollState,
-    headerHeightPx: Float,
-    toolbarHeightPx: Float
-) {
+private fun Title(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx: Float) {
+    var titleHeightPx by remember { mutableStateOf(0f) }
+    val paddingPx = with(LocalDensity.current) { paddingMedium.toPx() }
     val titlePaddingStartPx = with(LocalDensity.current) { titlePaddingStart.toPx() }
     val titlePaddingEndPx = with(LocalDensity.current) { titlePaddingEnd.toPx() }
-    val paddingMediumPx = with(LocalDensity.current) { paddingMedium.toPx() }
-    var titleHeightPx by remember { mutableStateOf(0f) }
 
-    val titleY =
-        (-headerHeightPx - (toolbarHeightPx / 2) + (3 * titleHeightPx / 2) + 2 * paddingMediumPx)
-            .div(headerHeightPx - toolbarHeightPx)
-            .times(scroll.value)
-            .plus(headerHeightPx - titleHeightPx - paddingMediumPx)
+    Text(
+        text = "New York",
+        fontSize = 30.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .graphicsLayer {
+                val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
+                val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
 
-    val titleX = (titlePaddingEndPx - titlePaddingStartPx)
-        .div(headerHeightPx - toolbarHeightPx)
-        .times(scroll.value)
-        .plus(titlePaddingStartPx)
+                val scaleXY = lerp(
+                    titleFontScaleStart.dp,
+                    titleFontScaleEnd.dp,
+                    collapseFraction
+                )
 
-    Text(text = "New York",
-         style = MaterialTheme.typography.h5,
-         fontWeight = FontWeight.Bold,
-         modifier = Modifier
-             .graphicsLayer {
-                 translationY = titleY.coerceAtLeast(toolbarHeightPx / 2 - titleHeightPx / 2)
-                 translationX = titleX.coerceAtMost(titlePaddingEndPx)
-             }
-             .onGloballyPositioned {
-                 titleHeightPx = it.size.height.toFloat()
-             }
+                val titleY: Float = (1f-collapseFraction).pow(2) *
+                    (headerHeightPx - titleHeightPx - paddingPx) +
+                    2 * collapseFraction * (1-collapseFraction) * headerHeightPx / 2 +
+                    collapseFraction.pow(2) * (toolbarHeightPx / 2 - titleHeightPx / 2)
+
+                val titleX: Float =
+                    (1f-collapseFraction).pow(2) * (titlePaddingStartPx) +
+                        2 * collapseFraction * (1-collapseFraction) * titlePaddingEndPx * 5 / 4 +
+                        collapseFraction.pow(2) * titlePaddingEndPx
+
+
+                translationY = titleY
+                translationX = titleX
+                scaleX = scaleXY.value
+                scaleY = scaleXY.value
+            }
+            .onGloballyPositioned {
+                titleHeightPx = it.size.height.toFloat()
+            }
     )
 }
 
