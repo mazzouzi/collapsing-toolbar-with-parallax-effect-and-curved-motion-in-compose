@@ -30,9 +30,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.collapsingtoolbar.ui.theme.CollapsingToolbarTheme
 
 class MainActivity : ComponentActivity() {
@@ -71,7 +72,10 @@ private val toolbarHeight = 56.dp
 private val paddingMedium = 16.dp
 
 private val titlePaddingStart = 16.dp
-private val titlePaddingEnd = 72.dp
+private val titlePaddingEnd = 64.dp
+
+private const val titleFontScaleStart = 1f
+private const val titleFontScaleEnd = 0.66f
 
 @Composable
 fun CollapsingToolbarParallaxEffect() {
@@ -92,18 +96,18 @@ fun CollapsingToolbarParallaxEffect() {
 
 @Composable
 private fun Header(scroll: ScrollState, headerHeightPx: Float) {
-    val headerTranslationY = -scroll.value.toFloat() / 2f // Parallax effect
+    val headerY = -scroll.value.toFloat() / 2f // Parallax effect
     val headerAlpha = (-1f / headerHeightPx) * scroll.value + 1
     Log.d(
         "Morad",
-        "translationY = $headerTranslationY | alpha = $headerAlpha | scroll = ${scroll.value}"
+        "translationY = $headerY | alpha = $headerAlpha | scroll = ${scroll.value}"
     )
 
     Box(modifier = Modifier
         .fillMaxWidth()
         .height(headerHeight)
         .graphicsLayer {
-            translationY = headerTranslationY
+            translationY = headerY
             alpha = headerAlpha
         }
     ) {
@@ -154,8 +158,8 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
 
     AnimatedVisibility(
         visible = showToolbar,
-        enter = fadeIn(animationSpec = tween(400)),
-        exit = fadeOut(animationSpec = tween(400))
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -169,7 +173,8 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
                 )
         ) {
             IconButton(
-                onClick = {}, modifier = Modifier
+                onClick = {},
+                modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .size(36.dp)
             ) {
@@ -192,7 +197,14 @@ private fun Title(
     val titlePaddingStartPx = with(LocalDensity.current) { titlePaddingStart.toPx() }
     val titlePaddingEndPx = with(LocalDensity.current) { titlePaddingEnd.toPx() }
     val paddingMediumPx = with(LocalDensity.current) { paddingMedium.toPx() }
+
     var titleHeightPx by remember { mutableStateOf(0f) }
+
+    val titleScale = (titleFontScaleEnd - titleFontScaleStart)
+        .div(headerHeightPx - toolbarHeightPx)
+        .times(scroll.value)
+        .plus(titleFontScaleStart)
+        .coerceAtLeast(titleFontScaleEnd)
 
     val titleY =
         (-headerHeightPx - (toolbarHeightPx / 2) + (3 * titleHeightPx / 2) + 2 * paddingMediumPx)
@@ -205,17 +217,20 @@ private fun Title(
         .times(scroll.value)
         .plus(titlePaddingStartPx)
 
-    Text(text = "New York",
-         style = MaterialTheme.typography.h5,
-         fontWeight = FontWeight.Bold,
-         modifier = Modifier
-             .graphicsLayer {
-                 translationY = titleY.coerceAtLeast(toolbarHeightPx / 2 - titleHeightPx / 2)
-                 translationX = titleX.coerceAtMost(titlePaddingEndPx)
-             }
-             .onGloballyPositioned {
-                 titleHeightPx = it.size.height.toFloat()
-             }
+    Text(
+        text = "New York",
+        fontSize = 30.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .graphicsLayer {
+                translationY = titleY.coerceAtLeast(toolbarHeightPx / 2 - titleHeightPx / 2)
+                translationX = titleX.coerceAtMost(titlePaddingEndPx)
+                scaleX = titleScale
+                scaleY = titleScale
+            }
+            .onGloballyPositioned {
+                titleHeightPx = it.size.height.toFloat()
+            }
     )
 }
 
