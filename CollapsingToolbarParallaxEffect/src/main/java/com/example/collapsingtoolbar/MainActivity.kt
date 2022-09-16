@@ -28,8 +28,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.example.collapsingtoolbar.ui.theme.CollapsingToolbarTheme
 
@@ -152,9 +154,10 @@ private fun Body(scroll: ScrollState) {
 
 @Composable
 private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx: Float) {
-    var showToolbar by remember { mutableStateOf(false) }
-    val toolbarBottomTranslation = headerHeightPx - toolbarHeightPx
-    showToolbar = scroll.value >= toolbarBottomTranslation
+    val toolbarBottom = headerHeightPx - toolbarHeightPx
+    val showToolbar by derivedStateOf {
+        scroll.value >= toolbarBottom
+    }
 
     AnimatedVisibility(
         visible = showToolbar,
@@ -179,7 +182,7 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
                     .size(36.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.Default.Menu,
                     contentDescription = "",
                     tint = Color.White
                 )
@@ -194,28 +197,29 @@ private fun Title(
     headerHeightPx: Float,
     toolbarHeightPx: Float
 ) {
-    val titlePaddingStartPx = with(LocalDensity.current) { titlePaddingStart.toPx() }
-    val titlePaddingEndPx = with(LocalDensity.current) { titlePaddingEnd.toPx() }
-    val paddingMediumPx = with(LocalDensity.current) { paddingMedium.toPx() }
-
     var titleHeightPx by remember { mutableStateOf(0f) }
+    val titleHeightDp = with(LocalDensity.current) { titleHeightPx.toDp() }
 
-    val titleScale = (titleFontScaleEnd - titleFontScaleStart)
-        .div(headerHeightPx - toolbarHeightPx)
-        .times(scroll.value)
-        .plus(titleFontScaleStart)
-        .coerceAtLeast(titleFontScaleEnd)
+    val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
+    val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
 
-    val titleY =
-        (-headerHeightPx - (toolbarHeightPx / 2) + (3 * titleHeightPx / 2) + 2 * paddingMediumPx)
-            .div(headerHeightPx - toolbarHeightPx)
-            .times(scroll.value)
-            .plus(headerHeightPx - titleHeightPx - paddingMediumPx)
+    val scaleXY = lerp(
+        titleFontScaleStart.dp,
+        titleFontScaleEnd.dp,
+        collapseFraction
+    )
 
-    val titleX = (titlePaddingEndPx - titlePaddingStartPx)
-        .div(headerHeightPx - toolbarHeightPx)
-        .times(scroll.value)
-        .plus(titlePaddingStartPx)
+    val titleY = lerp(
+        headerHeight - titleHeightDp - paddingMedium,
+        toolbarHeight / 2 - titleHeightDp / 2,
+        collapseFraction
+    )
+
+    val titleX = lerp(
+        titlePaddingStart,
+        titlePaddingEnd,
+        collapseFraction
+    )
 
     Text(
         text = "New York",
@@ -223,10 +227,10 @@ private fun Title(
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .graphicsLayer {
-                translationY = titleY.coerceAtLeast(toolbarHeightPx / 2 - titleHeightPx / 2)
-                translationX = titleX.coerceAtMost(titlePaddingEndPx)
-                scaleX = titleScale
-                scaleY = titleScale
+                translationY = titleY.toPx()
+                translationX = titleX.toPx()
+                scaleX = scaleXY.value
+                scaleY = scaleXY.value
             }
             .onGloballyPositioned {
                 titleHeightPx = it.size.height.toFloat()
