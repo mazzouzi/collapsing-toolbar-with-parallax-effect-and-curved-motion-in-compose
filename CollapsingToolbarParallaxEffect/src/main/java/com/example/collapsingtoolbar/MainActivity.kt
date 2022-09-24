@@ -1,7 +1,6 @@
 package com.example.collapsingtoolbar
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -98,19 +97,12 @@ fun CollapsingToolbarParallaxEffect() {
 
 @Composable
 private fun Header(scroll: ScrollState, headerHeightPx: Float) {
-    val headerY = -scroll.value.toFloat() / 2f // Parallax effect
-    val headerAlpha = (-1f / headerHeightPx) * scroll.value + 1
-    Log.d(
-        "Morad",
-        "translationY = $headerY | alpha = $headerAlpha | scroll = ${scroll.value}"
-    )
-
     Box(modifier = Modifier
         .fillMaxWidth()
         .height(headerHeight)
         .graphicsLayer {
-            translationY = headerY
-            alpha = headerAlpha
+            translationY = -scroll.value.toFloat() / 2f
+            alpha = (-1f / headerHeightPx) * scroll.value + 1
         }
     ) {
         Image(
@@ -200,33 +192,33 @@ private fun Title(
     var titleHeightPx by remember { mutableStateOf(0f) }
     val titleHeightDp = with(LocalDensity.current) { titleHeightPx.toDp() }
 
-    val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
-    val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
-
-    val scaleXY = lerp(
-        titleFontScaleStart.dp,
-        titleFontScaleEnd.dp,
-        collapseFraction
-    )
-
-    val titleY = lerp(
-        headerHeight - titleHeightDp - paddingMedium,
-        toolbarHeight / 2 - titleHeightDp / 2,
-        collapseFraction
-    )
-
-    val titleX = lerp(
-        titlePaddingStart,
-        titlePaddingEnd,
-        collapseFraction
-    )
-
     Text(
         text = "New York",
         fontSize = 30.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .graphicsLayer {
+                val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
+                val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
+
+                val scaleXY = lerp(
+                    titleFontScaleStart.dp,
+                    titleFontScaleEnd.dp,
+                    collapseFraction
+                )
+
+                val titleY = lerp(
+                    headerHeight - titleHeightDp - paddingMedium,
+                    toolbarHeight / 2 - titleHeightDp / 2,
+                    collapseFraction
+                )
+
+                val titleX = lerp(
+                    titlePaddingStart,
+                    titlePaddingEnd,
+                    collapseFraction
+                )
+
                 translationY = titleY.toPx()
                 translationX = titleX.toPx()
                 scaleX = scaleXY.value
