@@ -2,5 +2,4 @@
  
 * [Medium post](https://medium.com/@morad.azzouzi/collapsing-toolbar-with-parallax-effect-and-curve-motion-in-jetpack-compose-9ed1c3c0393f)
 
-![github](https://user-images.githubusercontent.com/21988512/192098383-0ad7e4ff-1111-4c51-a968-5bba46f25146.gif)
-
+![device-2022-09-29-111449](https://user-images.githubusercontent.com/21988512/192992503-dc292bc8-b9d9-4e0d-a731-b6f08abcdc35.gif)
