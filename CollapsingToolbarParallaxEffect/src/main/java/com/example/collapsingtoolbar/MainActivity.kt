@@ -148,8 +148,10 @@ private fun Body(scroll: ScrollState) {
 @Composable
 private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx: Float) {
     val toolbarBottom = headerHeightPx - toolbarHeightPx
-    val showToolbar by derivedStateOf {
-        scroll.value >= toolbarBottom
+    val showToolbar by remember {
+        derivedStateOf {
+            scroll.value >= toolbarBottom
+        }
     }
 
     AnimatedVisibility(
