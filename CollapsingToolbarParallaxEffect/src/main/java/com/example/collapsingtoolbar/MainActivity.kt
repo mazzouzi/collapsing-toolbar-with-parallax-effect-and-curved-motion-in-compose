@@ -1,5 +1,6 @@
 package com.example.collapsingtoolbar
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,33 +8,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -50,6 +30,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
+import com.example.collapsingtoolbar.ui.theme.Black900
+import com.example.collapsingtoolbar.ui.theme.Blue500
+import com.example.collapsingtoolbar.ui.theme.Blue800
 import com.example.collapsingtoolbar.ui.theme.CollapsingToolbarTheme
 
 class MainActivity : ComponentActivity() {
@@ -57,10 +40,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CollapsingToolbarTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
-                ) {
-                    CollapsingToolbarParallaxEffect()
+                Surface {
+                    CollapsingToolbarParallaxEffect(
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colors.surface)
+                    )
                 }
             }
         }
@@ -79,35 +64,53 @@ private const val titleFontScaleStart = 1f
 private const val titleFontScaleEnd = 0.66f
 
 @Composable
-fun CollapsingToolbarParallaxEffect() {
+fun CollapsingToolbarParallaxEffect(modifier: Modifier = Modifier) {
     val scroll: ScrollState = rememberScrollState(0)
 
     val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
     val toolbarHeightPx = with(LocalDensity.current) { toolbarHeight.toPx() }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Header(scroll, headerHeightPx)
-        Body(scroll)
-        Toolbar(scroll, headerHeightPx, toolbarHeightPx)
-        Title(scroll, headerHeightPx, toolbarHeightPx)
+    Box(modifier = modifier) {
+        Header(
+            scroll = scroll,
+            headerHeightPx = headerHeightPx,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(headerHeight)
+        )
+        Body(
+            scroll = scroll,
+            modifier = Modifier.fillMaxSize()
+        )
+        Toolbar(
+            scroll = scroll,
+            headerHeightPx = headerHeightPx,
+            toolbarHeightPx = toolbarHeightPx
+        )
+        Title(
+            scroll = scroll,
+            headerHeightPx = headerHeightPx,
+            toolbarHeightPx = toolbarHeightPx
+        )
     }
 }
 
 @Composable
-private fun Header(scroll: ScrollState, headerHeightPx: Float) {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .height(headerHeight)
-        .graphicsLayer {
-            translationY = -scroll.value.toFloat() / 2f // Parallax effect
-            alpha = (-1f / headerHeightPx) * scroll.value + 1
-        }
+private fun Header(
+    scroll: ScrollState,
+    headerHeightPx: Float,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                translationY = -scroll.value.toFloat() / 2f // Parallax effect
+                alpha = (-1f / headerHeight.toPx()) * scroll.value + 1
+            }
     ) {
         Image(
-            painter = painterResource(id = R.drawable.bg_pexel),
-            contentDescription = "",
+            painter = painterResource(id = R.drawable.brooklyn_bridge),
+            contentDescription = null,
             contentScale = ContentScale.FillBounds
         )
 
@@ -116,7 +119,7 @@ private fun Header(scroll: ScrollState, headerHeightPx: Float) {
                 .fillMaxSize()
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color(0xAA000000)),
+                        colors = listOf(Color.Transparent, Black900),
                         startY = 3 * headerHeightPx / 4 // Gradient applied to wrap the title only
                     )
                 )
@@ -125,27 +128,31 @@ private fun Header(scroll: ScrollState, headerHeightPx: Float) {
 }
 
 @Composable
-private fun Body(scroll: ScrollState) {
+private fun Body(scroll: ScrollState, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.verticalScroll(scroll)
+        modifier = modifier.verticalScroll(scroll)
     ) {
         Spacer(Modifier.height(headerHeight))
         repeat(5) {
             Text(
-                text = stringResource(R.string.detail_placeholder),
+                text = stringResource(R.string.lorem_ipsum),
                 style = MaterialTheme.typography.body1,
+                color = MaterialTheme.colors.onSurface,
                 textAlign = TextAlign.Justify,
-                modifier = Modifier
-                    .background(Color(0XFF161616))
-                    .padding(16.dp)
+                modifier = Modifier.padding(16.dp)
             )
         }
     }
 }
 
 @Composable
-private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx: Float) {
+private fun Toolbar(
+    scroll: ScrollState,
+    headerHeightPx: Float,
+    toolbarHeightPx: Float,
+    modifier: Modifier = Modifier
+) {
     val toolbarBottom = headerHeightPx - toolbarHeightPx
     val showToolbar by remember {
         derivedStateOf {
@@ -154,6 +161,7 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
     }
 
     AnimatedVisibility(
+        modifier = modifier,
         visible = showToolbar,
         enter = fadeIn(animationSpec = tween(300)),
         exit = fadeOut(animationSpec = tween(300))
@@ -161,7 +169,7 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
         TopAppBar(
             modifier = Modifier.background(
                 brush = Brush.horizontalGradient(
-                    listOf(Color(0xff026586), Color(0xff032C45))
+                    listOf(Blue500, Blue800)
                 )
             ),
             navigationIcon = {
@@ -173,7 +181,7 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
                 ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "",
+                        contentDescription = null,
                         tint = Color.White
                     )
                 }
@@ -189,16 +197,18 @@ private fun Toolbar(scroll: ScrollState, headerHeightPx: Float, toolbarHeightPx:
 private fun Title(
     scroll: ScrollState,
     headerHeightPx: Float,
-    toolbarHeightPx: Float
+    toolbarHeightPx: Float,
+    modifier: Modifier = Modifier
 ) {
     var titleHeightPx by remember { mutableStateOf(0f) }
     var titleWidthPx by remember { mutableStateOf(0f) }
 
     Text(
-        text = "New York",
+        text = stringResource(id = R.string.new_york),
         fontSize = 30.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier
+        color = Color.White,
+        modifier = modifier
             .graphicsLayer {
                 val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
                 val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
@@ -259,10 +269,16 @@ private fun Title(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun DefaultPreview() {
     CollapsingToolbarTheme {
-        CollapsingToolbarParallaxEffect()
+        CollapsingToolbarParallaxEffect(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    MaterialTheme.colors.surface
+                )
+        )
     }
 }
