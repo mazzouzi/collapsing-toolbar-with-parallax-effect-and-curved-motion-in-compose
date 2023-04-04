@@ -87,11 +87,7 @@ fun CollapsingToolbarParallaxEffect(modifier: Modifier = Modifier) {
             headerHeightPx = headerHeightPx,
             toolbarHeightPx = toolbarHeightPx
         )
-        Title(
-            scroll = scroll,
-            headerHeightPx = headerHeightPx,
-            toolbarHeightPx = toolbarHeightPx
-        )
+        Title(scroll = scroll)
     }
 }
 
@@ -105,7 +101,7 @@ private fun Header(
         modifier = modifier
             .graphicsLayer {
                 translationY = -scroll.value.toFloat() / 2f // Parallax effect
-                alpha = (-1f / headerHeight.toPx()) * scroll.value + 1
+                alpha = (-1f / headerHeightPx) * scroll.value + 1
             }
     ) {
         Image(
@@ -153,7 +149,10 @@ private fun Toolbar(
     toolbarHeightPx: Float,
     modifier: Modifier = Modifier
 ) {
-    val toolbarBottom = headerHeightPx - toolbarHeightPx
+    val toolbarBottom by remember {
+        mutableStateOf(headerHeightPx - toolbarHeightPx)
+    }
+
     val showToolbar by remember {
         derivedStateOf {
             scroll.value >= toolbarBottom
@@ -196,8 +195,6 @@ private fun Toolbar(
 @Composable
 private fun Title(
     scroll: ScrollState,
-    headerHeightPx: Float,
-    toolbarHeightPx: Float,
     modifier: Modifier = Modifier
 ) {
     var titleHeightPx by remember { mutableStateOf(0f) }
@@ -210,7 +207,7 @@ private fun Title(
         color = Color.White,
         modifier = modifier
             .graphicsLayer {
-                val collapseRange: Float = (headerHeightPx - toolbarHeightPx)
+                val collapseRange: Float = (headerHeight.toPx() - toolbarHeight.toPx())
                 val collapseFraction: Float = (scroll.value / collapseRange).coerceIn(0f, 1f)
 
                 val scaleXY = lerp(
